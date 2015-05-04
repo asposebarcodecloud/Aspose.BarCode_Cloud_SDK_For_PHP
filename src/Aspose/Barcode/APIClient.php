@@ -3,6 +3,7 @@
 namespace Aspose\Barcode;
 
 use Aspose\Barcode\AsposeApp;
+use Aspose\Barcode\ApiException as Exception;
 
 /**
  * APIClient.php
@@ -104,7 +105,7 @@ class APIClient {
         }
 
         $url = $urlPartToSign . '&signature=' . $encodedSignature;
-
+        //echo $url; exit;
         /*
          * 
          * Sign url ends
@@ -164,8 +165,8 @@ class APIClient {
             throw new Exception("TIMEOUT: api call to " . $url .
             " took more than 180s to return");
         } else if ($response_info['http_code'] == 200) {
-            //$data = json_decode($response);
-            $data = $response;
+            $data = json_decode($response);
+            //$data = $response;
         } else if ($response_info['http_code'] == 401) {
             throw new Exception("Unauthorized API request to " . $url .
             ": " . json_decode($response)->message);
@@ -250,33 +251,55 @@ class APIClient {
      * @param string $class class name is passed as a string
      * @return object an instance of $class
      */
-    public static function deserialize($data, $class) {
-        if (null === $data) {
-            $deserialized = null;
-        } else if (strcasecmp(substr($class, 0, 6), 'array[') == 0) {
-            $subClass = substr($class, 6, -1);
-            $values = array();
-            foreach ($data as $value) {
-                $values[] = self::deserialize($value, $subClass);
+    public static function deserialize($object, $class) {
+        if (gettype($object) == "NULL") {
+            return $object;
+        }
+        if (substr($class, 0, 6) == 'array[') {
+            $sub_class = substr($class, 6, -1);
+            $sub_objects = array();
+            foreach ($object as $sub_object) {
+                $sub_objects[] = self::deserialize($sub_object, $sub_class);
             }
-            $deserialized = $values;
+            return $sub_objects;
         } elseif ($class == 'DateTime') {
-            $deserialized = new \DateTime($data);
+            return new DateTime($object);
         } elseif (in_array($class, array('string', 'int', 'float', 'bool'))) {
-            settype($data, $class);
-            $deserialized = $data;
+            settype($object, $class);
+            return $object;
         } else {
-            $classPath = "Aspose\Barcode\Models\\$class";
-            $instance = new $classPath();
-            foreach ($instance::$swaggerTypes as $property => $type) {
-                if (isset($data->$property)) {
-                    $instance->$property = self::deserialize($data->$property, $type);
+            $class = "Aspose\Barcode\Models\\$class";
+            $instance = new $class(); // this instantiates class named $class
+            $classVars = get_class_vars($class);
+        }
+        
+        foreach ($object as $property => $value) {
+            // Need to handle possible pluralization differences
+            $true_property = $property;
+            if (!property_exists($class, $true_property)) {
+                if (substr($property, -1) == 's') {
+                    $true_property = substr($property, 0, -1);
                 }
             }
-            $deserialized = $instance;
+            if (array_key_exists($true_property, $classVars['swaggerTypes'])) {
+                $type = $classVars['swaggerTypes'][$true_property];
+            } else {
+                $type = 'string';
+            }
+            if (in_array($type, array('string', 'int', 'float', 'bool'))) {
+                //settype($value, $type);
+                $instance->{$true_property} = $value;
+            } elseif (preg_match("/array<(.*)>/", $type, $matches)) {
+                $sub_class = $matches[1];
+                $instance->{$true_property} = array();
+                foreach ($value as $sub_property => $sub_value) {
+                    $instance->{$true_property}[] = self::deserialize($sub_value, $sub_class);
+                }
+            } else {
+                $instance->{$true_property} = self::deserialize($value, $type);
+            }
         }
-        return $deserialized;
-        return $data;
+        return $instance;
     }
 
 }
