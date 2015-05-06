@@ -91,13 +91,13 @@ class BarcodeApi {
             $body = $file;
         }
         $response = $this->apiClient->callAPI($resourcePath, $method, $queryParams, $body, $headerParams);
-
-        if (!$response) {
+        return $response;
+        /*if (!$response) {
             return null;
         }
 
         $responseObject = $this->apiClient->deserialize($response, 'ResponseMessage');
-        return $responseObject;
+        return $responseObject;*/
     }
 
     /**
@@ -390,13 +390,13 @@ class BarcodeApi {
 
      * folder, string: Image's folder. (optional)
 
-     * file, File:  (required)
+     * file, File:  (optional)
 
      * @return SaaSposeResponse
      */
-    public function PutBarcodeGenerateFile($name, $text = null, $type = null, $format = null, $resolutionX = null, $resolutionY = null, $dimensionX = null, $dimensionY = null, $codeLocation = null, $grUnit = null, $autoSize = null, $barHeight = null, $imageHeight = null, $imageWidth = null, $imageQuality = null, $rotAngle = null, $topMargin = null, $bottomMargin = null, $leftMargin = null, $rightMargin = null, $enableChecksum = null, $storage = null, $folder = null, $file) {
+    public function PutBarcodeGenerateFile($name, $text = null, $type = null, $format = null, $resolutionX = null, $resolutionY = null, $dimensionX = null, $dimensionY = null, $codeLocation = null, $grUnit = null, $autoSize = null, $barHeight = null, $imageHeight = null, $imageWidth = null, $imageQuality = null, $rotAngle = null, $topMargin = null, $bottomMargin = null, $leftMargin = null, $rightMargin = null, $enableChecksum = null, $storage = null, $folder = null, $file = null) {
         // verify required params are set
-        if ($name == '' || $file == '') {
+        if ($name == '') {
             throw new Exception("missing required params");
         }
         //parse inputs

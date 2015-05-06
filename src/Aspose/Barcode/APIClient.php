@@ -165,8 +165,11 @@ class APIClient {
             throw new Exception("TIMEOUT: api call to " . $url .
             " took more than 180s to return");
         } else if ($response_info['http_code'] == 200) {
-            $data = json_decode($response);
-            //$data = $response;
+            if ($this->isJson($response)) {
+                $data = json_decode($response);
+            } else {
+                $data = $response;
+            }
         } else if ($response_info['http_code'] == 401) {
             throw new Exception("Unauthorized API request to " . $url .
             ": " . json_decode($response)->message);
@@ -300,6 +303,10 @@ class APIClient {
             }
         }
         return $instance;
+    }
+    
+    public function isJson($string) {
+        return is_string($string) && is_object(json_decode($string)) && (json_last_error() == JSON_ERROR_NONE) ? true : false;
     }
 
 }
