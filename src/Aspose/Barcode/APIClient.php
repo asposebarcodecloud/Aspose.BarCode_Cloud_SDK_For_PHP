@@ -165,11 +165,7 @@ class APIClient {
             throw new Exception("TIMEOUT: api call to " . $url .
             " took more than 180s to return");
         } else if ($response_info['http_code'] == 200) {
-            if ($this->isJson($response)) {
-                $data = json_decode($response);
-            } else {
-                $data = $response;
-            }
+            $data = $response;
         } else if ($response_info['http_code'] == 401) {
             throw new Exception("Unauthorized API request to " . $url .
             ": " . json_decode($response)->message);
@@ -255,6 +251,12 @@ class APIClient {
      * @return object an instance of $class
      */
     public static function deserialize($object, $class) {
+        if (self::isJson($object)) {
+            $object = json_decode($object);
+        } else {
+            return $object;
+        }
+        
         if (gettype($object) == "NULL") {
             return $object;
         }
